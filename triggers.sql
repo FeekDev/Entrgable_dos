@@ -2,12 +2,13 @@ USE [STOCKMASTERbdv4]
 GO
 
 /****** Trigger 1: Actualizar stock cuando se inserta un detalle de factura ******/
+/* Eliminado
 CREATE TRIGGER [dbo].[tr_ActualizarStockInsert]
 ON [dbo].[DetalleFactura]
 AFTER INSERT
 AS
 BEGIN
-	SET NOCOUNT ON;
+	SET NOCOUNT OFF;
 	
 	-- Actualizar el stock del artículo restando la cantidad vendida
 	UPDATE [dbo].[Articulo]
@@ -15,7 +16,7 @@ BEGIN
 	FROM INSERTED
 	WHERE [dbo].[Articulo].[codigo] = INSERTED.[codigo_articulo];
 END;
-GO
+GO */
 
 /****** Trigger 2: Restaurar stock cuando se elimina un detalle de factura ******/
 CREATE TRIGGER [dbo].[tr_ActualizarStockDelete]
@@ -23,7 +24,7 @@ ON [dbo].[DetalleFactura]
 AFTER DELETE
 AS
 BEGIN
-	SET NOCOUNT ON;
+	SET NOCOUNT OFF;
 	
 	-- Restaurar el stock del artículo sumando la cantidad eliminada
 	UPDATE [dbo].[Articulo]
@@ -33,13 +34,14 @@ BEGIN
 END;
 GO
 
+-- Revisar
 /****** Trigger 3: Ajustar stock cuando se actualiza la cantidad en detalle ******/
 CREATE TRIGGER [dbo].[tr_ActualizarStockUpdate]
 ON [dbo].[DetalleFactura]
 AFTER UPDATE
 AS
 BEGIN
-	SET NOCOUNT ON;
+	SET NOCOUNT OFF;
 	
 	-- Si cambió la cantidad, ajustar el stock
 	UPDATE [dbo].[Articulo]
@@ -48,7 +50,7 @@ BEGIN
 	INNER JOIN DELETED ON INSERTED.[id_detalle] = DELETED.[id_detalle]
 	WHERE [dbo].[Articulo].[codigo] = INSERTED.[codigo_articulo];
 END;
-GO
+GO------*
 
 /****** Trigger 4: Validar que exista stock disponible antes de insertar ******/
 CREATE TRIGGER [dbo].[tr_ValidarStockDisponible]
@@ -56,7 +58,7 @@ ON [dbo].[DetalleFactura]
 INSTEAD OF INSERT
 AS
 BEGIN
-	SET NOCOUNT ON;
+	SET NOCOUNT OFF;
 	
 	-- Verificar si existe stock suficiente
 	IF EXISTS (
@@ -84,7 +86,9 @@ BEGIN
 END;
 GO
 
+
 /****** Trigger 5: Calcular el subtotal automáticamente en detalle de factura ******/
+/* Eliminado
 CREATE TRIGGER [dbo].[tr_CalcularSubtotal]
 ON [dbo].[DetalleFactura]
 AFTER INSERT, UPDATE
@@ -99,6 +103,7 @@ BEGIN
 	WHERE [dbo].[DetalleFactura].[id_detalle] = i.[id_detalle];
 END;
 GO
+*/
 
 
 /****** Trigger 6: Prevenir eliminación de categorías que tienen artículos ******/
@@ -107,7 +112,7 @@ ON [dbo].[Categoria]
 INSTEAD OF DELETE
 AS
 BEGIN
-	SET NOCOUNT ON;
+	SET NOCOUNT OFF;
 	
 	-- Verificar si la categoría tiene artículos
 	IF EXISTS (
@@ -126,52 +131,3 @@ BEGIN
 	WHERE [id_categoria] IN (SELECT [id_categoria] FROM DELETED);
 END;
 GO
-
-/****** Trigger 7: Prevenir eliminación de personas que tienen ventas ******/
-CREATE TRIGGER [dbo].[tr_PrevenirEliminarPersona]
-ON [dbo].[Persona]
-INSTEAD OF DELETE
-AS
-BEGIN
-	SET NOCOUNT ON;
-	
-	-- Verificar si la persona tiene ventas
-	IF EXISTS (
-		SELECT 1
-		FROM [dbo].[Venta] v
-		WHERE v.[id_persona] IN (SELECT [id_persona] FROM DELETED)
-	)
-	BEGIN
-		RAISERROR('Error: No se puede eliminar una persona que tiene ventas registradas.', 16, 1);
-		ROLLBACK TRANSACTION;
-		RETURN;
-	END;
-	
-	-- Si no hay ventas, proceder con la eliminación
-	DELETE FROM [dbo].[Persona]
-	WHERE [id_persona] IN (SELECT [id_persona] FROM DELETED);
-END;
-GO
-
-/****** Trigger 8: Prevenir stock negativo ******/
-CREATE TRIGGER [dbo].[tr_PrevenirStockNegativo]
-ON [dbo].[Articulo]
-AFTER UPDATE
-AS
-BEGIN
-	SET NOCOUNT ON;
-	
-	-- Verificar si el stock quedó negativo
-	IF EXISTS (
-		SELECT 1
-		FROM INSERTED
-		WHERE [stock] < 0
-	)
-	BEGIN
-		RAISERROR('Error: El stock no puede ser negativo.', 16, 1);
-		ROLLBACK TRANSACTION;
-		RETURN;
-	END;
-END;
-GO
-
