@@ -24,7 +24,7 @@ ON [dbo].[DetalleFactura]
 AFTER DELETE
 AS
 BEGIN
-	SET NOCOUNT OFF;
+	SET NOCOUNT ON;
 	
 	-- Restaurar el stock del artículo sumando la cantidad eliminada
 	UPDATE [dbo].[Articulo]
@@ -41,7 +41,7 @@ ON [dbo].[DetalleFactura]
 AFTER UPDATE
 AS
 BEGIN
-	SET NOCOUNT OFF;
+	SET NOCOUNT ON;
 	
 	-- Si cambió la cantidad, ajustar el stock
 	UPDATE [dbo].[Articulo]
@@ -58,7 +58,7 @@ ON [dbo].[DetalleFactura]
 INSTEAD OF INSERT
 AS
 BEGIN
-	SET NOCOUNT OFF;
+	SET NOCOUNT ON;
 	
 	-- Verificar si existe stock suficiente
 	IF EXISTS (
@@ -112,7 +112,7 @@ ON [dbo].[Categoria]
 INSTEAD OF DELETE
 AS
 BEGIN
-	SET NOCOUNT OFF;
+	SET NOCOUNT ON;
 	
 	-- Verificar si la categoría tiene artículos
 	IF EXISTS (
